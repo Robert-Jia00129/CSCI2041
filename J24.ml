@@ -151,3 +151,5 @@ let bstGet root key =
 
   (* ('key * 'value)bst -> 'key -> 'value *)
 
+(* persistent data object def1: move it to disk, so it's persistent
+   def 2:    original object persists *)
