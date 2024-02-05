@@ -153,3 +153,24 @@ let bstGet root key =
 
 (* persistent data object def1: move it to disk, so it's persistent
    def 2:    original object persists *)
+let bstPut root key value= 
+  let rec bstPutting subtree = 
+    match subtree with
+      BSTEmpty -> BstNode(key,value,BSTEmpty,BSTEmpty)|
+      BstNode (otherKey,otherValue,left,right)->
+        if key < otherKey
+          then BstNode(otherKey,otherValue,(bstPutting left),right) (* This is not tail recursive*)
+        else if key > otherKey
+          then BstNode(otherKey,otherValue, left, (bstPutting right)) (* This is not tail recursive*)
+        else if value = otherValue
+              then subtree
+            else BstNode(key, value, left, right)
+  in bstPuting root;;
+
+(* building a BST *)
+let t = BSTEmpty;;
+let t = bstPut t 10 "ten";;
+let t = bstPut t 7 "seven";;
+let t = bstPut t 7 "seven";;
+let t = bstPut t 15 "fifteen";;
+
