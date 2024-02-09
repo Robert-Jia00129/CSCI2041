@@ -178,9 +178,22 @@ let t = BSTEmpty in
   let t = bstPut t 10 "ten" in 
     let t = bstPut t 7 "seven" in 
       let t = bstPut t 15 "fifteen" ;;
-let t = BSTEmpty;;
-let t = bstPut t 10 "ten";;
-let t = bstPut t 7 "seven";;
-let t = bstPut t 7 "seven";;
-let t = bstPut t 15 "fifteen";;
 
+let rec isBstEqual left right = 
+  match (left,right) with 
+    (BSTEmpty,BSTEmpty) -> true|
+    (BSTEmpty,BstNode (_,_,_,_)) |(BstNode (_,_,_,_), BSTEmpty) -> false | 
+    (BstNode (l_k,_,left_left,left_right),BstNode (r_k,_,right_left, right_right)) -> 
+      if l_k <> r_k && 
+        isBstEqual (left_left,right_left) &&  (* not tail recursive*)
+        isBstEqual (left_right,right_right);; (* tail recursive*)
+
+let k = 1;;
+let f() = k;;
+let k = 2 in f();; (* return 1*)
+
+(* function close themselves in their defining environment *)
+(* environment associate names with values. "binds" names to values *)
+(* function is closed -> remmebers its defining environment (static binding/lexical binding)*)
+
+(* dynamic binding: looks in current environment instead of defining environment  *)
