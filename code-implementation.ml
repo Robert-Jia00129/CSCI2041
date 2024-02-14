@@ -276,3 +276,25 @@ let generateBools etc n =
         generating (false::bools) (n-1);
         generating (true::bools) (n-1)
   in generating [] n
+
+
+type proposition = False | True | Var of string | Not of proposition | And of proposition * proposition| 
+                    Or of proposition * proposition | Imply of proposition * proposition | Equiv of proposition * proposition;;
+
+(* data structure of manipulating propositions in ocaml *)
+(* Imply (Not (And (Var "p", Var "q")),Or ((Not (Var "p")),Not (Var "q"))) *)
+
+let evaluate proposition pairs = 
+  let rec evaluating proposition = 
+    match proposition with 
+      False -> false | (* False: constructor that constructs proposition; false: literal*)
+      True -> true | 
+      Var name -> alGet pairs name | 
+      Not right -> not (evaluating right)|
+      And (left,right) -> (evaluating left) && (evaluating right) |
+      Or (left, right) -> (evaluating left) && (evaluating right) | 
+      Imply (left, right) -> (not (evaluating left)) || (evaluating right) |
+      Equiv (left, right) -> (evaluating left) = (evaluating right)
+  in evaluating proposition;;
+
+
