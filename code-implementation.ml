@@ -297,4 +297,112 @@ let evaluate proposition pairs =
       Equiv (left, right) -> (evaluating left) = (evaluating right)
   in evaluating proposition;;
 
+let generatePairs etc names = 
+  let rec generating names pairs = 
+    match names with 
+      [] -> etc pairs|
+      name::otherNames -> 
+        generating otherNames (alPut pairs name false);
+        generating otherNames (alPut pairs name true)
+  in generating names [];;
+
+  let generateAndTestPairs etc names = 
+    let rec generating names pairs = 
+      match names with 
+        [] -> etc pairs|
+        name::otherNames -> 
+          generating otherNames (alPut pairs name false) && 
+          generating otherNames (alPut pairs name true)
+    in generating names [];;
+
+
+let names proposition = 
+  let namesing proposition = match proposition with
+    False | True -> []|
+    Var name -> [name]|
+    Not right -> namesing right|
+    And (left,right) -> namesing left @ namesing right  (* @: appened operator: sticks two lists together*)
+  in uniquify (names proposition);;
+
+let isTautology proposition = 
+  generateAndTestPairs (fun pairs -> evaluate proposition pairs) (names proposition);;
+
+(* search based programming / brute-force algorithm *)
+
+isTautology (And (Var "p",Var "q"));;
+
+
+
+
+(* And Var x, y*)
+
+(* streams: ordered sequence of object that appears to be infinitely long 
+   but only a finite part actually exists*)
+
+
+(* stream definition: 
+   stream1: data structure for IO
+   stream2: infinite series in finite space *)
+  
+   let makeStream this state next = 
+    ((this, state), next);;
+  
+  let first ((this,_),_)= this;;
+  
+  let rest ((this,state),next) = 
+    (next this state, next);;
+  
+    (* unit object *)
+  let naturals = makeStream 0 () (fun this tate -> ((this+1),state));; (* ((0,()),<fun>)*)
+  
+  let temp = first rest naturals;;
+  
+  let factorials = makeStream 1 1 (fun this state -> ((this*state),state+1));;
+
+  let temp = first rest rest factorials;;
+
+  let rec take count stream = 
+    match count with 
+      0 -> stream | 
+      _ -> take (count-1) (rest stream);;
+
+let temp = first (take 4 factorials);;
+let rec takeList count stream = 
+  match count with 
+    0 -> []|
+    _ -> (first stream)::(takeList (count-1) (rest stream));;
+
+(* ()::[1;2;3] *)
+
+let advance predicate stream = 
+  let advancing stream = 
+    if predicate (first stream) then
+      stream 
+    else advancing (rest stream) (*if predicate is never satisfied, then advance will hang*)
+  in advancing stream;;
+
+let compare straem1 stream2 = 
+  makeStream ((frist stream1)=(first stream2)) 
+              (((rest stream1),(rest stream2))) 
+              (fun _ (s1,s2)->
+                  (((frist stream1)=(first stream2)),
+                  (((rest stream1),(rest stream2)))))
+
+
+
+(* Can we simulate OOP using a functional applicatiev language? 
+   OCaml has OOP - it doesn't work that we'll see here. 
+   All we've got is functions (closures) -> we can do OOP *)
+
+type 'base stackOperation= 
+                IsEmpty|
+                Peek|
+                Pop|
+                Push of 'base;;
+
+type 'base stackResult = 
+                BoolResult of bool|
+                StackResult of stack|
+                BaseResult of 'base;;
+
 
