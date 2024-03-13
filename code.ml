@@ -1,6 +1,10 @@
 open List;;
+open Array;;
+open Printf;;
+open Sys;;
 exception AlError;;
 exception BstError of string;;
+exception StackError of string;; 
 (* 1st version
 (* is Member *)
 (* TODO: if else question *)
@@ -292,7 +296,7 @@ let evaluate proposition pairs =
       Var name -> alGet pairs name | 
       Not right -> not (evaluating right)|
       And (left,right) -> (evaluating left) && (evaluating right) |
-      Or (left, right) -> (evaluating left) && (evaluating right) | 
+      Or (left, right) -> (evaluating left) || (evaluating right) | 
       Imply (left, right) -> (not (evaluating left)) || (evaluating right) |
       Equiv (left, right) -> (evaluating left) = (evaluating right)
   in evaluating proposition;;
@@ -306,30 +310,42 @@ let generatePairs etc names =
         generating otherNames (alPut pairs name true)
   in generating names [];;
 
-  let generateAndTestPairs etc names = 
-    let rec generating names pairs = 
-      match names with 
-        [] -> etc pairs|
-        name::otherNames -> 
-          generating otherNames (alPut pairs name false) && 
-          generating otherNames (alPut pairs name true)
-    in generating names [];;
+let generateAndTestPairs etc names = 
+  let rec generating names pairs = 
+    match names with 
+      [] -> etc pairs|
+      name::otherNames -> 
+        generating otherNames (alPut pairs name false) && 
+        generating otherNames (alPut pairs name true)
+  in generating names [];;
 
+  (* let uniquify things =
+    let rec uniquifying things uniqueThings =
+    match things
+    with [] ->
+    uniqueThings |
+    firstThing :: otherThings ->
+    if isIn firstThing uniqueThings
+    then uniquifying otherThings uniqueThings
+    else uniquifying otherThings (firstThing :: uniqueThings)
+    in uniquifying things [] ;; *)
 
-let names proposition = 
-  let namesing proposition = match proposition with
+(* let names proposition = 
+  let rec namesing proposition = match proposition with
     False | True -> []|
     Var name -> [name]|
     Not right -> namesing right|
     And (left,right) -> namesing left @ namesing right  (* @: appened operator: sticks two lists together*)
-  in uniquify (names proposition);;
+  in uniquify (namesing proposition);; *)
 
+
+(* 
 let isTautology proposition = 
-  generateAndTestPairs (fun pairs -> evaluate proposition pairs) (names proposition);;
+  generateAndTestPairs (fun pairs -> evaluate (proposition) (pairs)) (names proposition);; *)
 
 (* search based programming / brute-force algorithm *)
 
-isTautology (And (Var "p",Var "q"));;
+(* isTautology (And (Var "p",Var "q"));; *)
 
 
 
@@ -353,13 +369,13 @@ isTautology (And (Var "p",Var "q"));;
     (next this state, next);;
   
     (* unit object *)
-  let naturals = makeStream 0 () (fun this tate -> ((this+1),state));; (* ((0,()),<fun>)*)
+  let naturals = makeStream 0 () (fun this state -> ((this+1),state));; (* ((0,()),<fun>)*)
   
-  let temp = first rest naturals;;
+  let temp = first (rest naturals);;
   
   let factorials = makeStream 1 1 (fun this state -> ((this*state),state+1));;
 
-  let temp = first rest rest factorials;;
+  let temp = first (rest (rest factorials));;
 
   let rec take count stream = 
     match count with 
@@ -375,17 +391,17 @@ let rec takeList count stream =
 (* ()::[1;2;3] *)
 
 let advance predicate stream = 
-  let advancing stream = 
+  let rec advancing stream = 
     if predicate (first stream) then
       stream 
     else advancing (rest stream) (*if predicate is never satisfied, then advance will hang*)
   in advancing stream;;
 
-let compare straem1 stream2 = 
-  makeStream ((frist stream1)=(first stream2)) 
+let compare stream1 stream2 = 
+  makeStream ((first stream1)=(first stream2)) 
               (((rest stream1),(rest stream2))) 
               (fun _ (s1,s2)->
-                  (((frist stream1)=(first stream2)),
+                  (((first stream1)=(first stream2)),
                   (((rest stream1),(rest stream2)))))
 
 
@@ -394,15 +410,110 @@ let compare straem1 stream2 =
    OCaml has OOP - it doesn't work that we'll see here. 
    All we've got is functions (closures) -> we can do OOP *)
 
-type 'base stackOperation= 
-                IsEmpty|
-                Peek|
-                Pop|
-                Push of 'base;;
+
+type 'base stackOperation = 
+                StackOpIsEmpty|
+                StackOpPeek|
+                StackOpPop|
+                StackOpPush of 'base;;
 
 type 'base stackResult = 
-                BoolResult of bool|
-                StackResult of stack|
-                BaseResult of 'base;;
+        StackBoolResult of bool|
+        StackBaseResult of 'base|
+        StackNoResult;;
 
+
+(* variables *)
+(* variable, variable value, variable name *)
+
+let makeStack () = 
+  let top = ref[]
+    in let dispatcher operation = 
+      match operation with 
+        StackOpIsEmpty -> StackBoolResult (!top = [])|
+        StackOpPeek -> if !top = [] then raise (StackError "Can't Peek")
+                      else StackBaseResult (hd(!top))|
+        StackOpPop -> 
+          if !top=[] then raise (StackError "Can't Pop") 
+            else (top := tl (!top);
+                            StackNoResult)|
+        StackOpPush base -> 
+          top:=base::(!top);
+          StackNoResult
+        in dispatcher;;
+
+
+let s = makeStack ();;
+(* s StackOpIsEmpty -> StackBoolResult true *)
+(* '_weak1 stackOperation -> 
+   '_weak1 StackResult*)
+
+
+s (StackOpPush "C");;
+s (StackOpPush "B");;
+s (StackOpPush "A");;
+
+
+s StackOpPeek;; (* stackBaseResult "A"*)
+
+
+s StackOpPop;; (* Stack No Resulte*)
+
+s StackOpPeek;; (* stackbaseresult "B"*)
+
+
+(* let peek stack =
+  match stack with 
+    Stack top -> 
+      match !top with EmptyStackNode -> 
+        raise (StackError "Con't Peek") | 
+        StackNod (thing, _ ) -> 
+          thing;;
+
+let pop stack = 
+  match stack with 
+    Stack top -> 
+      match !top with
+       EmptyStackNode -> 
+        raise (StackError "Can't Pop") | 
+      StackNode (_, next) -> 
+        top := !next;; *)
+
+(* arrays *)
+let a = [|1;2;3;4;5;6|];;
+
+a.(1)
+
+let memyFib = 
+  let t = Array.make 50 (-1) (* array of 50 -1s*)
+    in let rec fib n = 
+      if t.(n) > 0 then t.(n)
+      else (t.(n) <- 
+              (match n with 
+                0 -> 0|
+                1 -> 1|
+                _ -> fib (n-2)+fib(n-1));
+              t.(n))
+      in fib;;
+
+let time s f x = 
+  let t0 = Sys.time() in 
+    let y = f x in
+      let t1 = Sys.time() in 
+        Printf.printf "%s %f seconds" s (t1-.t0);
+        y;;
+
+let intyMemoize size unused func = 
+  let t = Array.make size (unused) in 
+    let let rec recurse = 
+      if t.(n) = unused then t.(n) <- func recurse n;t.(n)
+      else 
+        t.(n)
+    in memoFunc;;
+
+let autoMemyFib = intyMemoize 50 -1 (fun recurse n -> 
+                                          match n with 
+                                            0 -> 0|
+                                            1 -> 1|
+                                            _ -> (recurse (n-2))+(recurse (n-1)))
 
