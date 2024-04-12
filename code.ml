@@ -2,9 +2,11 @@ open List;;
 open Array;;
 open Printf;;
 open Sys;;
+open Lazy;;
 exception AlError;;
 exception BstError of string;;
 exception StackError of string;; 
+exception Oops of string;;
 (* 1st version
 (* is Member *)
 (* TODO: if else question *)
@@ -503,6 +505,9 @@ let time s f x =
         Printf.printf "%s %f seconds" s (t1-.t0);
         y;;
 
+
+(* Mar 13 *)
+
 let intyMemoize size unused func = 
   let t = Array.make size (unused) in 
     let let rec recurse = 
@@ -515,5 +520,88 @@ let autoMemyFib = intyMemoize 50 -1 (fun recurse n ->
                                           match n with 
                                             0 -> 0|
                                             1 -> 1|
-                                            _ -> (recurse (n-2))+(recurse (n-1)))
+                                            _ -> (recurse (n-2))+(recurse (n-1)));;
 
+
+
+(* Eager/lazy evaluation 
+   Eager eval: evlauate as much as possible
+   Lazy eval: evaluate as little as possible *)
+
+(* a&&b: evaluate a lazy way *)
+
+(* termination: if an expression terminates lazily, does it also terminate eagerly? *)
+
+type arith = 
+  Const of int|
+  Add of arith * arith|
+  Mul of arith * arith|
+  Div of arith * arith|
+  Hang;;
+
+let rec evaluate expression = 
+  match expression with 
+    Const value -> value|
+    Add (left,right) -> evaluateAdd left right | 
+    Mul (left,right) -> evaluateMul left right | 
+    Div (left,right) -> evaluateDiv left right | 
+    Hang -> evaluateHang ()
+  and (* call each other*)
+    let evaluateAdd left right = 
+      (evaluate left) + (evaluate right)
+  and 
+    evaluateMul left right = 
+      let left = evaluate left in 
+        if left = 0 then 0 
+        else left * (evlauate right)
+  and 
+    evaluateDiv left right = 
+      let right = evaluate right in 
+        if right = 0 then raise Oops "div by 0"
+        else (evaluate left)/right
+  and 
+    evaluateHang() = evaluateHang;0;;
+
+
+(* left: int
+   right: () -> int *)
+let mul left right = 
+  if left = 0 then 0
+  else left * (right ());;
+
+(* Future: promise to compute a value
+   value doesn't exist until future is realized  *)
+
+type 'base functionOrValue = 
+  FutureFunction of (unit -> 'base)|
+  FutureValue of 'base;;
+
+type 'base future = 
+  Future of ('base functionOrValue) ref;;
+
+
+let makefuture func = 
+  Future (ref (FutureFunction func));;
+
+let realize future = 
+  match future with 
+    Future variable -> 
+      (match !variable with 
+        FutureFunction (func) -> 
+          let value = func() in variable = FutureValue value;value|
+        FutureValue value -> value);;
+
+
+let f = makefuture (fun () -> "Hello");;
+
+realize f;;
+
+(* int -> Future *)
+let leftRightSquared left right = 
+  if left = 0 then 0
+  else left * (realize right) * (realize right);;
+
+leftRightSquared 2 (makefuture (fun () -> e));;
+
+
+lazy e;;
